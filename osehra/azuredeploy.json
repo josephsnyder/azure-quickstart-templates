@@ -1,0 +1,265 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vmName": {
+            "defaultValue": null,
+            "type": "string"
+        },
+        "adminPassword": {
+            "defaultValue": null,
+            "type": "securestring"
+        },
+        "adminUsername": {
+            "defaultValue": null,
+            "type": "string"
+        }
+    },
+    "variables": {
+        "publisher": "RogueWaveSoftwareformerlyOpenLogic",
+        "offer": "CentOS",
+        "sku": "7.3",
+        "version": "latest",
+        "panVmName": "[concat('PANORAMA', parameters('vmName'))]",
+        "kodVmName": "[concat('KODAK', parameters('vmName'))]",
+        "ipName": "[concat('IP',uniqueString(resourceGroup().id))]",
+        "vnName": "[concat('VN',uniqueString(resourceGroup().id))]",
+        "storageAccount": "[concat('SA',uniqueString(resourceGroup().id))]",
+        "netInterfaces": "[concat('NI',uniqueString(resourceGroup().id))]",
+        "nsgName":"[concat('NSG',uniqueString(resourceGroup().id))]"
+    },
+    "resources": [
+        {
+            "comments": "/providers/Microsoft.Compute/virtualMachines/vistaKODAK'.",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[variables('panVmName')]",
+            "apiVersion": "2015-06-15",
+            "location": "usgovvirginia",
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_D1_v2"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[variables('publisher')]",
+                        "offer": "[variables('offer')]",
+                        "sku": "[variables('sku')]",
+                        "version":"[variables('version')]"
+                    },
+                    "osDisk": {
+                        "name":"[variables('panVmName')]",
+                        "createOption": "FromImage",
+                        "vhd": {
+                            "uri": "[concat('https', '://', variables('storageAccount'), '.blob.core.usgovcloudapi.net', concat('/vhds/', variables('panVmName'),'.vhd'))]"
+                        },
+                        "caching": "ReadWrite"
+                    },
+                    "dataDisks": []
+                },
+                "osProfile": {
+                    "computerName": "[variables('panVmName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]",
+                    "secrets": []
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('panVmName'))]"
+                        }
+                    ]
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccount'))]",
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('netInterfaces'))]"
+            ]
+        },
+
+        {
+            "comments": "/providers/Microsoft.Compute/virtualMachines/vistaKODAK'.",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[variables('kodVmName')]",
+            "apiVersion": "2015-06-15",
+            "location": "usgovvirginia",
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_D1_v2"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[variables('publisher')]",
+                        "offer": "[variables('offer')]",
+                        "sku": "[variables('sku')]",
+                        "version":"[variables('version')]"
+                    },
+                    "osDisk": {
+                        "name": "[variables('kodVmName')]",
+                        "createOption": "FromImage",
+                        "vhd": {
+                            "uri": "[concat('https', '://', variables('storageAccount'), '.blob.core.usgovcloudapi.net', concat('/vhds/', variables('kodVmName'),'.vhd'))]"
+                        },
+                        "caching": "ReadWrite"
+                    },
+                    "dataDisks": []
+                },
+                "osProfile": {
+                    "computerName": "[variables('kodVmName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]"
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('kodVmName'))]"
+                        }
+                    ]
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccount'))]",
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('netInterfaces'))]"
+            ]
+        },
+
+
+
+        {
+            "comments": "/providers/Microsoft.Network/networkInterfaces/vistakodak219'.",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[variables('netInterfaces')]",
+            "apiVersion": "2016-03-30",
+            "location": "usgovvirginia",
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAddress": "10.0.1.5",
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('ipName'))]"
+                            },
+                            "subnet": {
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('vnName')), '/subnets/default')]"
+                            }
+                        }
+                    }
+                ],
+                "dnsSettings": {
+                    "dnsServers": []
+                },
+                "enableIPForwarding": false,
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('ipName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('vnName'))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+            ]
+        },
+        {
+            "comments": "/providers/Microsoft.Network/networkSecurityGroups/vistaKODAKnsg714'.",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[variables('nsgName')]",
+            "apiVersion": "2016-03-30",
+            "location": "usgovvirginia",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "default-allow-ssh",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1000,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "Cache-Server-Manager",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "49152-65535",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "VistA-TCP-Listener",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "9210",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1010,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            },
+            "dependsOn": []
+        },
+        {
+            "comments": "/providers/Microsoft.Network/publicIPAddresses/vistaKODAKip379'.",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[variables('ipName')]",
+            "apiVersion": "2016-03-30",
+            "location": "usgovvirginia",
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "idleTimeoutInMinutes": 4
+            },
+            "dependsOn": []
+        },
+        {
+            "comments": "/providers/Microsoft.Network/virtualNetworks/ehmpRG-vnet'.",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[variables('vnName')]",
+            "apiVersion": "2016-03-30",
+            "location": "usgovvirginia",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.1.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "default",
+                        "properties": {
+                            "addressPrefix": "10.0.1.0/24"
+                        }
+                    }
+                ]
+            },
+            "dependsOn": []
+        },
+        {
+            "comments": "/providers/Microsoft.Storage/storageAccounts/adminrgdisks488'.",
+            "type": "Microsoft.Storage/storageAccounts",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "Storage",
+            "name":"[variables('storageAccount')]",
+            "apiVersion": "2016-01-01",
+            "location": "usgovvirginia",
+            "tags": {},
+            "properties": {},
+            "dependsOn": []
+        }
+    ]
+}
